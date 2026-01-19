@@ -18,46 +18,62 @@ export default function Signup() {
     setError("");
 
     // 1️⃣ Create auth user
-   const { data, error } = await supabase.auth.signUp({
-  email,
-  password,
-});
+    const { data, error: authError } = await supabase.auth.signUp({
+      email,
+      password,
+    });
 
-if (error) {
-  setError(error.message);
-  setLoading(false);
-  return;
-}
+    if (authError) {
+      setError(authError.message);
+      setLoading(false);
+      return;
+    }
 
-if (!data.user) {
-  setError("Please verify your email before logging in.");
-  setLoading(false);
-  return;
-}
+    if (!data.user) {
+      setError("Please verify your email before logging in.");
+      setLoading(false);
+      return;
+    }
 
-const { error: profileError } = await supabase
-  .from("profiles")
-  .insert({
-    id: data.user.id,
-    name,
-    role: "employee",
-  });
+    const userId = data.user.id;
 
-if (profileError) {
-  setError(profileError.message);
-  setLoading(false);
-  return;
-}
+    // 2️⃣ Create profile
+    const { error: profileError } = await supabase
+      .from("profiles")
+      .insert({
+        id: userId,
+        name,
+        role: "employee",
+      });
 
-    // 3️⃣ Redirect to login
+    if (profileError) {
+      setError(profileError.message);
+      setLoading(false);
+      return;
+    }
+
+    // 3️⃣ Create employee (MINIMAL DATA)
+    const { error: employeeError } = await supabase
+      .from("employees")
+      .insert({
+        user_id: userId,
+        name,
+      });
+
+    if (employeeError) {
+      setError(employeeError.message);
+      setLoading(false);
+      return;
+    }
+
+    // 4️⃣ Redirect
     navigate("/login");
   };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-600 to-blue-700 px-4">
       <div className="relative w-full max-w-md bg-white rounded-2xl shadow-xl p-8">
-
-        {/* 🔙 Back arrow */}
+        {/* Back arrow */}
         <button
           onClick={() => navigate("/login")}
           className="absolute top-4 left-4 text-gray-500 hover:text-gray-700"
@@ -87,6 +103,7 @@ if (profileError) {
               type="text"
               required
               className="w-full border rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              value={name}
               onChange={(e) => setName(e.target.value)}
             />
           </div>
@@ -99,6 +116,7 @@ if (profileError) {
               type="email"
               required
               className="w-full border rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              value={email}
               onChange={(e) => setEmail(e.target.value)}
             />
           </div>
@@ -111,6 +129,7 @@ if (profileError) {
               type="password"
               required
               className="w-full border rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              value={password}
               onChange={(e) => setPassword(e.target.value)}
             />
           </div>

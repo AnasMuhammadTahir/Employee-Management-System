@@ -3,7 +3,7 @@ import { supabase } from "../../../supabaseClient";
 import { useNavigate } from "react-router-dom";
 
 export default function MyProfile() {
-  const [profile, setProfile] = useState(null);
+  const [employee, setEmployee] = useState(null);
   const [salary, setSalary] = useState(null);
   const navigate = useNavigate();
 
@@ -13,29 +13,31 @@ export default function MyProfile() {
         data: { user },
       } = await supabase.auth.getUser();
 
-      // employee profile
-      const { data: employee } = await supabase
+      if (!user) return;
+
+      // Employee data
+      const { data: employeeData } = await supabase
         .from("employees")
         .select(`
           id,
           name,
-          dob,
+          date_of_birth,
           departments ( name )
         `)
         .eq("user_id", user.id)
         .single();
 
-      if (!employee) return;
-      setProfile(employee);
+      if (!employeeData) return;
+      setEmployee(employeeData);
 
-      // latest salary record
+      // Latest salary
       const { data: salaryData } = await supabase
         .from("salaries")
         .select("salary, allowance, deduction, total")
-        .eq("employee_id", employee.id)
+        .eq("employee_id", employeeData.id)
         .order("pay_date", { ascending: false })
         .limit(1)
-        .single();
+        .maybeSingle();
 
       setSalary(salaryData);
     }
@@ -43,7 +45,7 @@ export default function MyProfile() {
     fetchProfile();
   }, []);
 
-  if (!profile) return null;
+  if (!employee) return null;
 
   return (
     <div className="flex justify-center items-center min-h-[80vh]">
@@ -52,28 +54,29 @@ export default function MyProfile() {
           My Profile
         </h1>
 
-        {/* Profile info */}
+        {/* Profile section */}
         <div className="flex flex-col md:flex-row gap-8 items-center">
-          {/* Image */}
           <img
-            src={`https://ui-avatars.com/api/?name=${profile.name}&background=2563eb&color=fff&size=128`}
+            src={`https://ui-avatars.com/api/?name=${employee.name}&background=2563eb&color=fff&size=128`}
             alt="Profile"
             className="w-32 h-32 rounded-full border"
           />
 
-          {/* Details */}
           <div className="flex-1 space-y-4 w-full">
-            <ProfileRow label="Name" value={profile.name} />
-            <ProfileRow label="Employee ID" value={profile.id} />
-            <ProfileRow label="Date of Birth" value={profile.dob} />
+            <ProfileRow label="Name" value={employee.name} />
+            <ProfileRow label="Employee ID" value={employee.id} />
+            <ProfileRow
+              label="Date of Birth"
+              value={employee.date_of_birth || "-"}
+            />
             <ProfileRow
               label="Department"
-              value={profile.departments?.name || "-"}
+              value={employee.departments?.name || "-"}
             />
           </div>
         </div>
 
-        {/* Salary Info */}
+        {/* Salary section */}
         <div className="mt-8 border-t pt-6">
           <h2 className="text-lg font-semibold mb-4">
             Salary Information
