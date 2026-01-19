@@ -1,7 +1,8 @@
 import { Navigate, Outlet } from "react-router-dom";
 import { supabase } from "../../supabaseClient";
 import { useEffect, useState } from "react";
-import { SESSION_DURATION } from "../../utils/session";
+
+const SESSION_DURATION = 12 * 60 * 60 * 1000; // 12 hours
 
 export default function ProtectedRoute({ role }) {
   const [loading, setLoading] = useState(true);
@@ -30,13 +31,13 @@ export default function ProtectedRoute({ role }) {
         return;
       }
 
-      const { data: profile } = await supabase
+      const { data: profile, error } = await supabase
         .from("profiles")
         .select("role")
         .eq("id", session.user.id)
         .single();
 
-      setAllowed(profile?.role === role);
+      setAllowed(!error && profile?.role === role);
       setLoading(false);
     };
 
