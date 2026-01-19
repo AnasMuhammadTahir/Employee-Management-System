@@ -18,7 +18,7 @@ export default function Navbar() {
           onClick={() => navigate("/")}
           className="text-2xl font-bold text-indigo-600 cursor-pointer"
         >
-          EMS Lite
+          StaffNet
         </div>
 
         {/* Center links */}

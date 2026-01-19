@@ -1,13 +1,25 @@
 import { Navigate, Outlet } from "react-router-dom";
 import { supabase } from "../../supabaseClient";
 import { useEffect, useState } from "react";
+import { SESSION_DURATION } from "../../utils/session";
 
-export default function ProtectedRoute({ role, children }) {
+export default function ProtectedRoute({ role }) {
   const [loading, setLoading] = useState(true);
   const [allowed, setAllowed] = useState(false);
 
   useEffect(() => {
     const checkAccess = async () => {
+      const loginTime = localStorage.getItem("login_time");
+
+      // ⏳ Session expired
+      if (!loginTime || Date.now() - loginTime > SESSION_DURATION) {
+        await supabase.auth.signOut();
+        localStorage.removeItem("login_time");
+        setAllowed(false);
+        setLoading(false);
+        return;
+      }
+
       const {
         data: { session },
       } = await supabase.auth.getSession();
@@ -18,18 +30,13 @@ export default function ProtectedRoute({ role, children }) {
         return;
       }
 
-      const { data: profile, error } = await supabase
+      const { data: profile } = await supabase
         .from("profiles")
         .select("role")
         .eq("id", session.user.id)
         .single();
 
-      if (!error && profile?.role === role) {
-        setAllowed(true);
-      } else {
-        setAllowed(false);
-      }
-
+      setAllowed(profile?.role === role);
       setLoading(false);
     };
 
@@ -39,7 +46,7 @@ export default function ProtectedRoute({ role, children }) {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <p className="text-gray-500">Loading...</p>
+        <p className="text-gray-500">Checking session...</p>
       </div>
     );
   }
@@ -47,6 +54,6 @@ export default function ProtectedRoute({ role, children }) {
   if (!allowed) {
     return <Navigate to="/login" replace />;
   }
-  
-  return children ? children : <Outlet />;
+
+  return <Outlet />;
 }

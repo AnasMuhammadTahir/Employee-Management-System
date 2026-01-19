@@ -24,7 +24,7 @@ export default function AdminLayout() {
 
       {/* SIDEBAR */}
       <aside className="w-64 bg-white shadow-md flex flex-col">
-        <div className="p-6 text-xl font-bold">EMS Admin</div>
+        <div className="p-6 text-xl font-bold">StaffNet Admin</div>
 
         <nav className="px-4 space-y-2 flex-1">
           <NavLink to="/admin" end className={linkClasses}>

@@ -57,10 +57,10 @@ export default function Home() {
       <section id="about" className="bg-white py-20">
         <div className="max-w-5xl mx-auto px-6 text-center">
           <h2 className="text-4xl font-bold text-gray-800 mb-6">
-            About EMS Lite
+            About StaffNet
           </h2>
           <p className="text-gray-600 text-lg">
-            EMS Lite is a lightweight employee management system designed
+            StaffNet is a lightweight employee management system designed
             for small teams and startups who want clarity, speed, and control
             without complexity.
           </p>
@@ -96,7 +96,7 @@ export default function Home() {
 
       {/* FOOTER */}
       <footer className="bg-gray-900 text-gray-400 text-center py-6">
-        © {new Date().getFullYear()} EMS Lite. All rights reserved.
+        © {new Date().getFullYear()} StaffNet. All rights reserved.
       </footer>
     </div>
     

@@ -22,7 +22,7 @@ export default function EmployeeLayout() {
       {/* Sidebar */}
       <aside className="w-64 bg-white shadow-md flex flex-col">
         <div className="p-6 text-xl font-bold">
-          EMS Lite
+          StaffNet Employee
         </div>
 
         <nav className="px-4 space-y-2 flex-1">

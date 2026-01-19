@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { supabase } from "../../supabaseClient.js";
+import { useState, useEffect } from "react";
+import { supabase } from "../../supabaseClient";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 
@@ -9,6 +9,39 @@ export default function Login() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+
+  // 🔁 Auto-redirect if session exists and is valid
+  useEffect(() => {
+    const checkSession = async () => {
+      const loginTime = localStorage.getItem("login_time");
+
+      if (!loginTime) return;
+
+      // ⏳ 12 hours = 43200000 ms
+      if (Date.now() - loginTime > 12 * 60 * 60 * 1000) {
+        await supabase.auth.signOut();
+        localStorage.removeItem("login_time");
+        return;
+      }
+
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      if (!session) return;
+
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("role")
+        .eq("id", session.user.id)
+        .single();
+
+      if (profile?.role === "admin") navigate("/admin");
+      if (profile?.role === "employee") navigate("/employee");
+    };
+
+    checkSession();
+  }, [navigate]);
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -38,7 +71,8 @@ export default function Login() {
       return;
     }
 
-    localStorage.setItem("role", profile.role);
+    // 🕒 Store login timestamp (session TTL workaround)
+    localStorage.setItem("login_time", Date.now());
 
     navigate(profile.role === "admin" ? "/admin" : "/employee");
     setLoading(false);
@@ -47,8 +81,6 @@ export default function Login() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-600 to-blue-700 px-4">
       <div className="relative w-full max-w-md bg-white rounded-2xl shadow-xl p-8">
-
-        {/* 🔙 Go back to Home */}
         <button
           onClick={() => navigate("/")}
           className="absolute top-4 left-4 text-gray-500 hover:text-gray-700"
@@ -77,7 +109,7 @@ export default function Login() {
             <input
               type="email"
               required
-              className="w-full border rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full border rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500"
               onChange={(e) => setEmail(e.target.value)}
             />
           </div>
@@ -89,7 +121,7 @@ export default function Login() {
             <input
               type="password"
               required
-              className="w-full border rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full border rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500"
               onChange={(e) => setPassword(e.target.value)}
             />
           </div>
@@ -101,17 +133,6 @@ export default function Login() {
             {loading ? "Signing in..." : "Login"}
           </button>
         </form>
-
-        {/* 🔗 Signup link */}
-        <p className="text-center text-sm text-gray-600 mt-6">
-          Don’t have an account?{" "}
-          <button
-            onClick={() => navigate("/signup")}
-            className="text-blue-600 font-medium hover:underline"
-          >
-            Sign up
-          </button>
-        </p>
       </div>
     </div>
   );
