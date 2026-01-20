@@ -1,125 +1,157 @@
 import { useEffect, useState } from "react";
-import { supabase } from "../../../supabaseClient";
 import { useNavigate } from "react-router-dom";
-import { Plus, Pencil, Trash2, Eye } from "lucide-react";
+import { supabase } from "../../../supabaseClient";
 
 export default function Employees() {
-  const [employees, setEmployees] = useState([]);
-  const [search, setSearch] = useState("");
   const navigate = useNavigate();
+  const [employees, setEmployees] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetchEmployees();
   }, []);
 
   async function fetchEmployees() {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("employees")
       .select(`
         id,
         name,
         dob,
-        departments ( name ),
-        salaries ( total, status )
+        departments (
+          name
+        )
       `)
       .order("created_at", { ascending: false });
 
-    setEmployees(data || []);
+    if (!error) {
+      setEmployees(data || []);
+    }
+
+    setLoading(false);
   }
 
-  async function deleteEmployee(id) {
-    if (!confirm("Delete this employee?")) return;
-    await supabase.from("employees").delete().eq("id", id);
-    fetchEmployees();
-  }
-
-  const filtered = employees.filter((e) =>
-    e.name.toLowerCase().includes(search.toLowerCase())
+  async function handleDelete(userId) {
+  const confirmDelete = window.confirm(
+    "This will permanently delete the employee account. Continue?"
   );
 
+  if (!confirmDelete) return;
+
+  const { error } = await supabase.functions.invoke(
+    "delete-employee",
+    {
+      body: { user_id: userId },
+    }
+  );
+
+  if (!error) {
+    setEmployees((prev) =>
+      prev.filter((emp) => emp.user_id !== userId)
+    );
+  } else {
+    alert("Failed to delete employee");
+  }
+}
+
   return (
-    <div className="max-w-7xl mx-auto">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-        <h1 className="text-2xl font-bold">Employees</h1>
+    <div className="px-4 sm:px-6 lg:px-8 mt-6">
+      {/* Header */}
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-2xl font-semibold">Employees</h1>
 
-        <div className="flex gap-3">
-          <input
-            type="text"
-            placeholder="Search..."
-            className="border rounded-lg px-4 py-2 w-full sm:w-64"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
-
-          <button
-            onClick={() => navigate("/admin/employees/new")}
-            className="hidden sm:flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
-          >
-            <Plus size={18} />
-            Add
-          </button>
-        </div>
+        <button
+          onClick={() => navigate("/admin/employees/add")}
+          className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+        >
+          Add Employee
+        </button>
       </div>
 
-      {/* TABLE */}
+      {/* Table */}
       <div className="bg-white rounded-xl shadow overflow-x-auto">
-        <table className="w-full text-sm">
-          <thead className="bg-gray-100">
-            <tr>
-              <th className="px-4 py-3 text-left">Name</th>
-              <th className="px-4 py-3 text-left">Department</th>
-              <th className="px-4 py-3 text-left">Salary</th>
-              <th className="px-4 py-3 text-center">Actions</th>
+        <table className="min-w-full">
+          <thead>
+            <tr className="text-left text-gray-500 text-sm">
+              <th className="px-6 py-4">Name</th>
+              <th className="px-6 py-4">Department</th>
+              <th className="px-6 py-4">Date of Birth</th>
+              <th className="px-6 py-4 text-right">Actions</th>
             </tr>
           </thead>
+
           <tbody>
-            {filtered.map((emp) => (
-              <tr key={emp.id} className="border-t">
-                <td className="px-4 py-3 font-medium">{emp.name}</td>
-                <td className="px-4 py-3">{emp.departments?.name || "—"}</td>
-                <td className="px-4 py-3">
-                  {emp.salaries?.[0]?.total
-                    ? `Rs ${emp.salaries[0].total}`
-                    : "—"}
-                </td>
-                <td className="px-4 py-3">
-                  <div className="flex justify-center gap-3">
-                    <button onClick={() => navigate(`/admin/employees/${emp.id}`)}>
-                      <Eye size={18} className="text-blue-600" />
-                    </button>
-                    <button
-                      onClick={() =>
-                        navigate(`/admin/employees/${emp.id}/edit`)
-                      }
-                    >
-                      <Pencil size={18} className="text-indigo-600" />
-                    </button>
-                    <button onClick={() => deleteEmployee(emp.id)}>
-                      <Trash2 size={18} className="text-red-600" />
-                    </button>
-                  </div>
+            {loading && (
+              <tr>
+                <td colSpan="4" className="px-6 py-6 text-center text-gray-500">
+                  Loading employees...
                 </td>
               </tr>
-            ))}
+            )}
 
-            {filtered.length === 0 && (
+            {!loading && employees.length === 0 && (
               <tr>
-                <td colSpan="4" className="text-center py-6 text-gray-500">
+                <td colSpan="4" className="px-6 py-6 text-center text-gray-400">
                   No employees found
                 </td>
               </tr>
             )}
+
+            {employees.map((emp) => (
+              <tr key={emp.id} className="hover:bg-gray-50 transition">
+                <td className="px-6 py-4 font-medium">{emp.name}</td>
+
+                <td className="px-6 py-4">
+                  {emp.departments?.name || "—"}
+                </td>
+
+                <td className="px-6 py-4">
+                  {emp.dob
+                    ? new Date(emp.dob).toLocaleDateString()
+                    : "—"}
+                </td>
+
+                <td className="px-6 py-4 text-right space-x-4">
+                  <button
+                    onClick={() =>
+                      navigate(`/admin/employees/${emp.id}`)
+                    }
+                    className="text-blue-600 hover:underline"
+                  >
+                    View
+                  </button>
+
+                  <button
+                    onClick={() =>
+                      navigate(`/admin/employees/${emp.id}/edit`)
+                    }
+                    className="text-gray-600 hover:underline"
+                  >
+                    Edit
+                  </button>
+
+                  <button
+                    onClick={() =>
+                      navigate(`/admin/employees/${emp.id}/salary`)
+                    }
+                    className="text-green-600 hover:underline"
+                  >
+                    Salary
+                  </button>
+
+                  <button
+                    onClick={() => handleDelete(emp.user_id)}
+                    className="text-red-600 hover:underline"
+                  >
+                    Delete
+                  </button>
+
+                </td>
+              </tr>
+            ))}
           </tbody>
         </table>
       </div>
-
-      {/* MOBILE FAB */}
-      <button
-        onClick={() => navigate("/admin/employees/new")}
-        className="sm:hidden fixed bottom-6 right-6 bg-blue-600 text-white p-4 rounded-full shadow-lg"
-      >
-        <Plus />
-      </button>
     </div>
   );
 }
