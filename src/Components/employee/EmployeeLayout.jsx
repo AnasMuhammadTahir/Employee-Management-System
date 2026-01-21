@@ -68,7 +68,7 @@ export default function EmployeeLayout() {
             My Profile
           </NavLink>
           <NavLink to="/employee/leaves" className={linkClasses}>
-            Leave Management
+            Leaves
           </NavLink>
           <NavLink to="/employee/settings" className={linkClasses}>
             Settings
