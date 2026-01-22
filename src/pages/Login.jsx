@@ -1,138 +1,123 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { supabase } from "../../supabaseClient";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft } from "lucide-react";
+import { LogIn, Loader } from "lucide-react";
 
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
   const navigate = useNavigate();
-
-  // 🔁 Auto-redirect if session exists and is valid
-  useEffect(() => {
-    const checkSession = async () => {
-      const loginTime = Number(localStorage.getItem("login_time"));
-
-      if (!loginTime) return;
-
-      // ⏳ 12 hours = 43200000 ms
-      if (Date.now() - loginTime > 12 * 60 * 60 * 1000) {
-        await supabase.auth.signOut();
-        localStorage.removeItem("login_time");
-        return;
-      }
-
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-
-      if (!session) return;
-
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("role")
-        .eq("id", session.user.id)
-        .single();
-
-      if (profile?.role === "admin") navigate("/admin");
-      if (profile?.role === "employee") navigate("/employee");
-    };
-
-    checkSession();
-  }, [navigate]);
 
   const handleLogin = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError("");
 
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
 
-    if (error) {
-      setError(error.message);
+      if (error) throw error;
+
+      if (data.user) {
+        // Get user role
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("role")
+          .eq("id", data.user.id)
+          .single();
+
+        const role = profile?.role || 'employee';
+        
+        // Redirect based on role
+        if (role === 'admin') {
+          navigate("/admin");
+        } else {
+          navigate("/employee");
+        }
+      }
+    } catch (error) {
+      console.error("Login error:", error);
+      setError(error.message || "Login failed");
+    } finally {
       setLoading(false);
-      return;
     }
-
-    const { data: profile, error: profileError } = await supabase
-      .from("profiles")
-      .select("role")
-      .eq("id", data.user.id)
-      .single();
-
-    if (profileError || !profile) {
-      setError("Profile not found. Contact admin.");
-      setLoading(false);
-      return;
-    }
-
-    // 🕒 Store login timestamp (session TTL workaround)
-    localStorage.setItem("login_time", Date.now());
-
-    navigate(profile.role === "admin" ? "/admin" : "/employee");
-    setLoading(false);
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-600 to-blue-700 px-4">
-      <div className="relative w-full max-w-md bg-white rounded-2xl shadow-xl p-8">
-        <button
-          onClick={() => navigate("/")}
-          className="absolute top-4 left-4 text-gray-500 hover:text-gray-700"
-        >
-          <ArrowLeft size={22} />
-        </button>
-
-        <h2 className="text-3xl font-bold text-center text-gray-800 mb-2">
-          Welcome Back
-        </h2>
-        <p className="text-center text-gray-500 mb-8">
-          Sign in to your EMS Lite account
-        </p>
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
+      <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-8">
+        <div className="text-center mb-8">
+          <h1 className="text-3xl font-bold text-gray-900">StaffNet</h1>
+          <p className="text-gray-600 mt-2">HR Management System</p>
+        </div>
 
         {error && (
-          <div className="bg-red-100 text-red-600 p-3 rounded mb-4 text-sm">
-            {error}
+          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+            <p className="text-red-600 text-sm">{error}</p>
           </div>
         )}
 
-        <form onSubmit={handleLogin} className="space-y-5">
+        <form onSubmit={handleLogin} className="space-y-6">
           <div>
-            <label className="block text-sm text-gray-600 mb-1">
-              Email address
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Email Address
             </label>
             <input
               type="email"
-              required
-              className="w-full border rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500"
+              value={email}
               onChange={(e) => setEmail(e.target.value)}
+              className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="Enter your email"
+              required
             />
           </div>
 
           <div>
-            <label className="block text-sm text-gray-600 mb-1">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
               Password
             </label>
             <input
               type="password"
-              required
-              className="w-full border rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500"
+              value={password}
               onChange={(e) => setPassword(e.target.value)}
+              className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="Enter your password"
+              required
             />
           </div>
 
           <button
+            type="submit"
             disabled={loading}
-            className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition"
+            className="w-full flex items-center justify-center px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
           >
-            {loading ? "Signing in..." : "Login"}
+            {loading ? (
+              <>
+                <Loader className="animate-spin mr-2" size={20} />
+                Signing in...
+              </>
+            ) : (
+              <>
+                <LogIn size={20} className="mr-2" />
+                Sign In
+              </>
+            )}
           </button>
         </form>
+
+        <div className="mt-8 text-center">
+          <p className="text-sm text-gray-600">
+            Demo Admin: admin@staffnet.com / Admin123!
+          </p>
+          <p className="text-sm text-gray-600 mt-1">
+            Demo Employee: employee@staffnet.com / Employee123!
+          </p>
+        </div>
       </div>
     </div>
   );
