@@ -62,14 +62,14 @@ export default function Navbar() {
             </button>
           </div>
 
-          {/* Premium Login Button */}
+          {/* Premium Login Button - FIXED VERSION */}
           <div className="hidden md:flex items-center space-x-4">
             <button
               onClick={() => navigate("/login")}
               className="group relative px-8 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold rounded-xl overflow-hidden transition-all duration-300 hover:shadow-xl hover:shadow-indigo-500/30 hover:-translate-y-0.5"
             >
-              {/* Button shine effect */}
-              <span className="absolute top-0 left-0 w-full h-full bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700"></span>
+              {/* Button shine effect - reduced opacity to avoid covering text */}
+              <span className="absolute top-0 left-0 w-full h-full bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700"></span>
               
               {/* Button content */}
               <span className="relative flex items-center justify-center gap-2">
@@ -79,10 +79,7 @@ export default function Navbar() {
                 </svg>
               </span>
               
-              {/* Button border gradient */}
-              <span className="absolute inset-0 rounded-xl p-[1.5px] bg-gradient-to-r from-indigo-600 to-purple-600 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                <span className="absolute inset-0 rounded-xl bg-white"></span>
-              </span>
+              {/* REMOVED the problematic white overlay that was covering the text */}
             </button>
           </div>
 
@@ -128,7 +125,7 @@ export default function Navbar() {
                   navigate("/login");
                   setIsMenuOpen(false);
                 }}
-                className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold py-4 rounded-xl hover:shadow-lg transition-shadow"
+                className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold py-4 rounded-xl hover:shadow-lg hover:scale-[1.02] transition-all duration-300"
               >
                 Login
               </button>
