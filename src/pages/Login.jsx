@@ -53,7 +53,7 @@ export default function Login() {
       <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-8">
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-gray-900">StaffNet</h1>
-          <p className="text-gray-600 mt-2">HR Management System</p>
+          <p className="text-gray-600 mt-2">Employee Management System</p>
         </div>
 
         {error && (
@@ -110,14 +110,7 @@ export default function Login() {
           </button>
         </form>
 
-        <div className="mt-8 text-center">
-          <p className="text-sm text-gray-600">
-            Demo Admin: admin@staffnet.com / Admin123!
-          </p>
-          <p className="text-sm text-gray-600 mt-1">
-            Demo Employee: employee@staffnet.com / Employee123!
-          </p>
-        </div>
+        
       </div>
     </div>
   );
